@@ -164,7 +164,7 @@ mod fixedwidth;
 pub use fixedwidth::{FixedWidthEncoding, FixedWidthU32, FixedWidthU64, FixedWidthUint};
 use std::{
     any::type_name,
-    net::{Ipv4Addr, Ipv6Addr},
+    net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6},
 };
 
 pub use crate::error::{EncodingError, EncodingErrorKind};
@@ -1130,6 +1130,75 @@ impl<T: BoxedSliceEncodable> CompactEncoding for Box<[T]> {
         Self: Sized,
     {
         <T as BoxedSliceEncodable>::boxed_slice_decode(buffer)
+    }
+}
+
+/// Encoded size for a [`SocketAddrV4`].
+pub const SOCKET_ADDR_V4_ENCODED_SIZE: usize = 4 + 2;
+/// Encoded size for a [`SocketAddrV6`].
+pub const SOCKET_ADDR_V6_ENCODED_SIZE: usize = 16 + 2;
+
+impl CompactEncoding for SocketAddrV4 {
+    fn encoded_size(&self) -> Result<usize, EncodingError> {
+        Ok(SOCKET_ADDR_V4_ENCODED_SIZE)
+    }
+
+    fn encode<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], EncodingError> {
+        let rest = self.ip().encode(buffer)?;
+        encode_u16(self.port(), rest)
+    }
+
+    fn decode(buffer: &[u8]) -> Result<(Self, &[u8]), EncodingError>
+    where
+        Self: Sized,
+    {
+        let (ip, rest) = Ipv4Addr::decode(buffer)?;
+        let (port, rest) = decode_u16(rest)?;
+        Ok((SocketAddrV4::new(ip, port), rest))
+    }
+}
+impl CompactEncoding for SocketAddrV6 {
+    fn encoded_size(&self) -> Result<usize, EncodingError> {
+        Ok(SOCKET_ADDR_V6_ENCODED_SIZE)
+    }
+
+    fn encode<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], EncodingError> {
+        let rest = self.ip().encode(buffer)?;
+        encode_u16(self.port(), rest)
+    }
+
+    fn decode(buffer: &[u8]) -> Result<(Self, &[u8]), EncodingError>
+    where
+        Self: Sized,
+    {
+        let (ip, rest) = Ipv6Addr::decode(buffer)?;
+        let (port, rest) = decode_u16(rest)?;
+        // TODO is this correct for flowinfo and scope_id?
+        Ok((SocketAddrV6::new(ip, port, 0, 0), rest))
+    }
+}
+
+impl VecEncodable for SocketAddrV4 {
+    fn vec_encoded_size(vec: &[Self]) -> Result<usize, EncodingError>
+    where
+        Self: Sized,
+    {
+        Ok(vec_encoded_size_for_fixed_sized_elements(
+            vec,
+            SOCKET_ADDR_V4_ENCODED_SIZE,
+        ))
+    }
+}
+
+impl VecEncodable for SocketAddrV6 {
+    fn vec_encoded_size(vec: &[Self]) -> Result<usize, EncodingError>
+    where
+        Self: Sized,
+    {
+        Ok(vec_encoded_size_for_fixed_sized_elements(
+            vec,
+            SOCKET_ADDR_V6_ENCODED_SIZE,
+        ))
     }
 }
 
