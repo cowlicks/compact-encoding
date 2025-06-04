@@ -180,6 +180,17 @@ const U16_SIZE: usize = 2;
 const U32_SIZE: usize = 4;
 const U64_SIZE: usize = 8;
 
+/// Encoded size of a network port
+pub const PORT_ENCODED_SIZE: usize = 2;
+/// Encoded size of an ipv4 address
+pub const IPV4_ADDR_ENCODED_SIZE: usize = U32_SIZE;
+/// Encoded size of an ipv6 address
+pub const IPV6_ADDR_ENCODED_SIZE: usize = 16;
+/// Encoded size for a [`SocketAddrV4`], an ipv4 address plus port.
+pub const SOCKET_ADDR_V4_ENCODED_SIZE: usize = IPV4_ADDR_ENCODED_SIZE + PORT_ENCODED_SIZE;
+/// Encoded size for a [`SocketAddrV6`], an ipv6 address plus port.
+pub const SOCKET_ADDR_V6_ENCODED_SIZE: usize = IPV6_ADDR_ENCODED_SIZE + PORT_ENCODED_SIZE;
+
 /// A trait for building small and fast parsers and serializers.
 pub trait CompactEncoding<Decode: ?Sized = Self> {
     /// The size in bytes required to encode `self`.
@@ -965,9 +976,10 @@ impl CompactEncoding for Ipv4Addr {
         Ok((Ipv4Addr::from(*dest), rest))
     }
 }
+
 impl CompactEncoding for Ipv6Addr {
     fn encoded_size(&self) -> std::result::Result<usize, EncodingError> {
-        Ok(4)
+        Ok(IPV6_ADDR_ENCODED_SIZE)
     }
 
     fn encode<'a>(&self, buffer: &'a mut [u8]) -> std::result::Result<&'a mut [u8], EncodingError> {
@@ -1132,11 +1144,6 @@ impl<T: BoxedSliceEncodable> CompactEncoding for Box<[T]> {
         <T as BoxedSliceEncodable>::boxed_slice_decode(buffer)
     }
 }
-
-/// Encoded size for a [`SocketAddrV4`].
-pub const SOCKET_ADDR_V4_ENCODED_SIZE: usize = 4 + 2;
-/// Encoded size for a [`SocketAddrV6`].
-pub const SOCKET_ADDR_V6_ENCODED_SIZE: usize = 16 + 2;
 
 impl CompactEncoding for SocketAddrV4 {
     fn encoded_size(&self) -> Result<usize, EncodingError> {
