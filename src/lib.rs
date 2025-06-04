@@ -839,6 +839,23 @@ impl CompactEncoding for u64 {
     }
 }
 
+impl CompactEncoding for usize {
+    fn encoded_size(&self) -> Result<usize, EncodingError> {
+        Ok(encoded_size_usize(*self))
+    }
+
+    fn encode<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], EncodingError> {
+        encode_usize_var(self, buffer)
+    }
+
+    fn decode(buffer: &[u8]) -> Result<(Self, &[u8]), EncodingError>
+    where
+        Self: Sized,
+    {
+        decode_usize(buffer)
+    }
+}
+
 impl CompactEncoding for String {
     fn encoded_size(&self) -> Result<usize, EncodingError> {
         encoded_size_str(self)
