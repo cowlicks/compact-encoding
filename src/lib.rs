@@ -1034,6 +1034,14 @@ impl<T: VecEncodable> CompactEncoding for Vec<T> {
     }
 }
 
+/// Get the encoded size for a Vec with elements which have a fixed size encoding.
+pub fn vec_encoded_size_for_fixed_sized_elements<T: CompactEncoding>(
+    vec: &[T],
+    element_encoded_size: usize,
+) -> usize {
+    encoded_size_usize(vec.len()) + (vec.len() * element_encoded_size)
+}
+
 impl VecEncodable for u32 {
     fn vec_encoded_size(vec: &[Self]) -> Result<usize, EncodingError>
     where
