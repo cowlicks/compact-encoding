@@ -514,7 +514,7 @@ pub fn take_array<const N: usize>(
 ) -> std::result::Result<([u8; N], &[u8]), EncodingError> {
     let Some((out, rest)) = buffer.split_first_chunk::<N>() else {
         return Err(EncodingError::out_of_bounds(&format!(
-            "Could not write [{}] bytes to buffer of length [{}]",
+            "Could not take [{}] bytes from buffer of length [{}]",
             N,
             buffer.len()
         )));
@@ -717,7 +717,8 @@ fn encode_u64(val: u64, buffer: &mut [u8]) -> Result<&mut [u8], EncodingError> {
     write_array(&val.to_le_bytes(), buffer)
 }
 
-fn encode_usize_var<'a>(
+/// Encode a `usize` in a variable width way
+pub fn encode_usize_var<'a>(
     value: &usize,
     buffer: &'a mut [u8],
 ) -> Result<&'a mut [u8], EncodingError> {
