@@ -1,6 +1,9 @@
 #![forbid(unsafe_code, missing_docs)]
 #![cfg_attr(test, deny(warnings))]
-
+// TODO compact encoding currently has no way to encode/decode`std::net::SocketAddr` because it
+// could contain a ipv4 OR an ipv6 address and the current ipv4 encoding has no way for it to
+// distinguish itself.
+// So should this be a panic?
 //! # Series of compact encoding schemes for building small and fast parsers and serializers
 //!
 //! Binary compatible with the
@@ -444,8 +447,20 @@ macro_rules! map_decode {
     }};
 }
 
-/// helper for mapping the first element of a two eleent tuple
+#[macro_export]
+/// Helper for mapping the first element of a two eleent tuple.
+/// This is useful for cleanly handling the result of CompactEncoding::decode.
 macro_rules! map_first {
+    ($res:expr, $f:expr) => {{
+        let (one, two) = $res;
+        let mapped = $f(one);
+        (mapped, two)
+    }};
+}
+
+#[macro_export]
+/// like [`map_first`] but the mapping should return a result.
+macro_rules! map_first_result {
     ($res:expr, $f:expr) => {{
         let (one, two) = $res;
         let mapped = $f(one)?;
@@ -618,16 +633,14 @@ pub fn decode_usize(buffer: &[u8]) -> Result<(usize, &[u8]), EncodingError> {
     let ([first], rest) = take_array::<1>(buffer)?;
     Ok(match first {
         x if x < U16_SIGNIFIER => (x.into(), rest),
-        U16_SIGNIFIER => map_first!(decode_u16(rest)?, |x: u16| Ok(x.into())),
+        U16_SIGNIFIER => map_first!(decode_u16(rest)?, |x: u16| x.into()),
         U32_SIGNIFIER => {
-            map_first!(decode_u32(rest)?, |val| usize::try_from(val).map_err(
-                |_| EncodingError::overflow("Could not convert u32 to usize")
-            ))
+            map_first_result!(decode_u32(rest)?, |val| usize::try_from(val)
+                .map_err(|_| EncodingError::overflow("Could not convert u32 to usize")))
         }
         _ => {
-            map_first!(decode_u64(rest)?, |val| usize::try_from(val).map_err(
-                |_| EncodingError::overflow("Could not convert u64 to usize")
-            ))
+            map_first_result!(decode_u64(rest)?, |val| usize::try_from(val)
+                .map_err(|_| EncodingError::overflow("Could not convert u64 to usize")))
         }
     })
 }
@@ -695,8 +708,8 @@ fn decode_u64_var(buffer: &[u8]) -> Result<(u64, &[u8]), EncodingError> {
     let ([first], rest) = take_array::<1>(buffer)?;
     Ok(match first {
         x if x < U16_SIGNIFIER => (x.into(), rest),
-        U16_SIGNIFIER => map_first!(decode_u16(rest)?, |x: u16| Ok(x.into())),
-        U32_SIGNIFIER => map_first!(decode_u32(rest)?, |x: u32| Ok(x.into())),
+        U16_SIGNIFIER => map_first!(decode_u16(rest)?, |x: u16| x.into()),
+        U32_SIGNIFIER => map_first!(decode_u32(rest)?, |x: u32| x.into()),
         _ => decode_u64(rest)?,
     })
 }
@@ -1240,6 +1253,14 @@ mod test {
         check_usize_var_enc_dec!(1 + 4, 65536);
         check_usize_var_enc_dec!(1 + 8, 4294967296);
 
+        Ok(())
+    }
+
+    #[test]
+    fn addr_6() -> Result<(), Box<dyn std::error::Error>> {
+        let addr: Ipv6Addr = "1:2:3::1".parse()?;
+        let buff = addr.to_encoded_bytes()?.to_vec();
+        assert_eq!(buff, vec![0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
         Ok(())
     }
 }
