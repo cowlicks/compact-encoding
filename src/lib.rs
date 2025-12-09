@@ -995,6 +995,14 @@ impl CompactEncoding for Ipv6Addr {
         Ok(IPV6_ADDR_ENCODED_SIZE)
     }
 
+    /// ```
+    /// # use std::net::Ipv6Addr;
+    /// # use compact_encoding::CompactEncoding;
+    /// let addr: Ipv6Addr = "1:2:3::1".parse()?;
+    /// let buff = addr.to_encoded_bytes()?.to_vec();
+    /// assert_eq!(buff, vec![0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     fn encode<'a>(&self, buffer: &'a mut [u8]) -> std::result::Result<&'a mut [u8], EncodingError> {
         let Some((dest, rest)) = buffer.split_first_chunk_mut::<16>() else {
             return Err(EncodingError::out_of_bounds(&format!(
@@ -1163,6 +1171,14 @@ impl CompactEncoding for SocketAddrV4 {
         Ok(SOCKET_ADDR_V4_ENCODED_SIZE)
     }
 
+    /// ```
+    /// # use std::net::SocketAddrV4;
+    /// # use compact_encoding::CompactEncoding;
+    /// let addr: SocketAddrV4 = "127.0.0.1:42".parse()?;
+    /// let buff = addr.to_encoded_bytes()?.to_vec();
+    /// assert_eq!(buff, vec![127, 0, 0, 1, 42, 0]);
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     fn encode<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], EncodingError> {
         let rest = self.ip().encode(buffer)?;
         encode_u16(self.port(), rest)
@@ -1182,6 +1198,14 @@ impl CompactEncoding for SocketAddrV6 {
         Ok(SOCKET_ADDR_V6_ENCODED_SIZE)
     }
 
+    /// ```
+    /// # use std::net::SocketAddrV6;
+    /// # use compact_encoding::CompactEncoding;
+    /// let addr: SocketAddrV6 = "[1:2:3::1]:80".parse()?;
+    /// let buff = addr.to_encoded_bytes()?.to_vec();
+    /// assert_eq!(buff, vec![0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 80, 0]);
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     fn encode<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], EncodingError> {
         let rest = self.ip().encode(buffer)?;
         encode_u16(self.port(), rest)
@@ -1253,14 +1277,6 @@ mod test {
         check_usize_var_enc_dec!(1 + 4, 65536);
         check_usize_var_enc_dec!(1 + 8, 4294967296);
 
-        Ok(())
-    }
-
-    #[test]
-    fn addr_6() -> Result<(), Box<dyn std::error::Error>> {
-        let addr: Ipv6Addr = "1:2:3::1".parse()?;
-        let buff = addr.to_encoded_bytes()?.to_vec();
-        assert_eq!(buff, vec![0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
         Ok(())
     }
 }
