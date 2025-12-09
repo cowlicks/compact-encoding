@@ -1,9 +1,5 @@
 #![forbid(unsafe_code, missing_docs)]
 #![cfg_attr(test, deny(warnings))]
-// TODO compact encoding currently has no way to encode/decode`std::net::SocketAddr` because it
-// could contain a ipv4 OR an ipv6 address and the current ipv4 encoding has no way for it to
-// distinguish itself.
-// So should this be a panic?
 //! # Series of compact encoding schemes for building small and fast parsers and serializers
 //!
 //! Binary compatible with the
