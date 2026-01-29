@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [2.2.0] - 2026-01-29
+
+### Added
+
 * Implement `CompactEncoding<Vec<u8>>` for `&[u8]`, allowing byte slices to be encoded directly
 * Implement `CompactEncoding<Vec<D>>` for `&[T]` where `T: VecEncodable<D>`, enabling encoding of slices like `&[&[u8]]`
 * Implement `VecEncodable` for `Vec<u8>` to support `Vec<Vec<u8>>`
@@ -52,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/datrs/compact-encoding/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/datrs/compact-encoding/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/datrs/compact-encoding/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/datrs/compact-encoding/compare/v2.1.0...v2.1.0
 [2.1.0]: https://github.com/datrs/compact-encoding/compare/v2.0.0...v2.1.0
